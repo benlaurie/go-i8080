@@ -45,25 +45,25 @@ func (c *CPU) initBIOS(cpmImage []byte, disks []Disk) {
 		c.bios.cpmImage = cpmImage
 	}
 
-	copy(c.Memory[CPM:], c.bios.cpmImage)
+	c.WriteBlock(CPM, c.bios.cpmImage)
 	c.PC = CPM
 
 	// Setup 0xDD hook to call BIOS
 	for i := BOOT; i <= SECTRAN; i += 3 {
-		c.Memory[i] = 0xDD
+		c.Write(uint16(i), 0xDD)
 	}
 
 	// not sure why this is needed, but it prevents CP/M trying to select weird disks
 	c.Registers[C] = 0
 
 	// Setup jump vectors for CP/M
-	c.Memory[0] = 0xC3 // JMP
+	c.Write(0, 0xC3) // JMP
 	c.Write16(1, WBOOT)
 
-	c.Memory[3] = 0x00
-	c.Memory[4] = 0x00
+	c.Write(3, 0x00)
+	c.Write(4, 0x00)
 
-	c.Memory[5] = 0xC3 // JMP
+	c.Write(5, 0xC3) // JMP
 	c.Write16(6, BDOS)
 
 	c.initDisks(disks)

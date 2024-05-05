@@ -8,20 +8,20 @@ import (
 func (c *CPU) Debug() string {
 	mnem, args := c.disasmPC()
 
-	disasm := fmt.Sprintf("ASM %04x %02x => %-8s%-8s", c.PC, c.Memory[c.PC], mnem, args)
+	disasm := fmt.Sprintf("ASM %04x %02x => %-8s%-8s", c.PC, c.Read(c.PC), mnem, args)
 
 	regs := fmt.Sprintf("REG BC=%02x %02x DE=%02x %02x HL=%02x %02x A=%02x SP=%04x PC=%04x",
 		c.Registers[B], c.Registers[C], c.Registers[D], c.Registers[E], c.Registers[H], c.Registers[L], c.Registers[A], c.SP, c.PC)
 
 	pc, sp, hl := "", "", ""
 	for i := c.PC; i < c.PC+8; i++ {
-		pc += fmt.Sprintf(" %02x", c.Memory[i&0xFFFF])
+		pc += fmt.Sprintf(" %02x", c.Read(i&0xFFFF))
 	}
 	for i := c.SP; i < c.SP+8; i++ {
-		sp += fmt.Sprintf(" %02x", c.Memory[i&0xFFFF])
+		sp += fmt.Sprintf(" %02x", c.Read(i&0xFFFF))
 	}
 	for i := uint32(c.HL()); i < uint32(c.HL())+2; i++ {
-		hl += fmt.Sprintf(" %02x", c.Memory[i&0xFFFF])
+		hl += fmt.Sprintf(" %02x", c.Read(uint16(i&0xFFFF)))
 	}
 	ptrs := fmt.Sprintf("PTR [PC]=%s [SP]=%s [HL]=%s", pc, sp, hl)
 

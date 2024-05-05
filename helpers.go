@@ -103,11 +103,23 @@ func (c *CPU) Pop() uint16 {
 
 // Write16 writes a 16-bit value `v` at address `addr`
 func (c *CPU) Write16(addr uint16, v uint16) {
-	c.Memory[addr+1] = uint8(v >> 8)
-	c.Memory[addr] = uint8(v)
+	c.Write(addr+1, uint8(v>>8))
+	c.Write(addr, uint8(v))
 }
 
 // Read16 reads a 16-bit value from address `addr`
 func (c *CPU) Read16(addr uint16) uint16 {
-	return uint16(c.Memory[addr+1])<<8 | uint16(c.Memory[addr])
+	return uint16(c.Read(addr+1))<<8 | uint16(c.Read(addr))
+}
+
+func (c *CPU) WriteBlock(addr uint16, data []uint8) {
+	for i, v := range data {
+		c.Write(addr+uint16(i), v)
+	}
+}
+
+func (c *CPU) ReadBlock(addr uint16, data []uint8) {
+	for i := range data {
+		data[i] = c.Read(addr + uint16(i))
+	}
 }

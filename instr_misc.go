@@ -5,16 +5,18 @@ func instrNOP(op uint8, c *CPU) uint64 {
 }
 
 func instrHLT(op uint8, c *CPU) uint64 {
-	panic("hlt")
+	c.Halted = true
+	return 7
 }
 
 func instrOUT(op uint8, c *CPU) uint64 {
-	// TODO
+	_ = insArg8(c)
 	return 10
 }
 
 func instrIN(op uint8, c *CPU) uint64 {
-	// TODO
+	port := insArg8(c)
+	c.Registers[A] = port // TODO
 	return 10
 }
 

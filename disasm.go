@@ -10,7 +10,7 @@ var disasmTable = [256]string{
 }
 
 func (c *CPU) disasmPC() (string, string) {
-	op := c.Memory[c.PC]
+	op := c.Read(c.PC)
 
 	if op == 0xDD {
 		// BIOS calls
@@ -19,7 +19,7 @@ func (c *CPU) disasmPC() (string, string) {
 
 	str := disasmTable[op]
 
-	str = strings.Replace(str, "d8", fmt.Sprintf("#%02x", c.Memory[c.PC+1]), -1)
+	str = strings.Replace(str, "d8", fmt.Sprintf("#%02x", c.Read(c.PC+1)), -1)
 	str = strings.Replace(str, "d16", fmt.Sprintf("#%04x", c.Read16(c.PC+1)), -1)
 	str = strings.Replace(str, "a16", fmt.Sprintf("#%04x", c.Read16(c.PC+1)), -1)
 

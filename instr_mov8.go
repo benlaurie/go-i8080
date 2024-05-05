@@ -13,9 +13,9 @@ func instrSTAX(op uint8, c *CPU) uint64 {
 	dst := insArg2(op) // actually 1 bit, but the 2nd bit of insArg2 is always 0 in the two STAX instructions
 
 	if dst == 0 { // STAX B
-		c.Memory[c.BC()] = c.Registers[A]
+		c.Write(c.BC(), c.Registers[A])
 	} else { // STAX D
-		c.Memory[c.DE()] = c.Registers[A]
+		c.Write(c.DE(), c.Registers[A])
 	}
 
 	return 7
@@ -23,7 +23,7 @@ func instrSTAX(op uint8, c *CPU) uint64 {
 
 // STA: 0x32
 func instrSTA(op uint8, c *CPU) uint64 {
-	c.Memory[insArg16(c)] = c.Registers[A]
+	c.Write(insArg16(c), c.Registers[A])
 	return 13
 }
 
@@ -32,9 +32,9 @@ func instrLDAX(op uint8, c *CPU) uint64 {
 	dst := insArg2(op) // actually 1 bit, but the 2nd bit of insArg2 is always 0 in the two LDAX instructions
 
 	if dst == 0 { // LDAX B
-		c.Registers[A] = c.Memory[c.BC()]
+		c.Registers[A] = c.Read(c.BC())
 	} else { // LDAX D
-		c.Registers[A] = c.Memory[c.DE()]
+		c.Registers[A] = c.Read(c.DE())
 	}
 
 	return 7
@@ -42,7 +42,7 @@ func instrLDAX(op uint8, c *CPU) uint64 {
 
 // LDA: 0x3A
 func instrLDA(op uint8, c *CPU) uint64 {
-	c.Registers[A] = c.Memory[insArg16(c)]
+	c.Registers[A] = c.Read(insArg16(c))
 	return 13
 }
 

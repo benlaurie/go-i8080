@@ -28,14 +28,20 @@ const (
 	A
 )
 
+type Memory interface {
+	Read(addr uint16) uint8
+	Write(addr uint16, data uint8)
+}
+
 // CPU implements an emulated Intel 8080 CPU
 type CPU struct {
-	Memory    [65536]uint8
+	memory    Memory
 	Registers [8]uint8
 	Flags     flags
 
-	SP uint16
-	PC uint16
+	SP     uint16
+	PC     uint16
+	Halted bool
 
 	ClockTime time.Duration // nanoseconds per clock tick
 
@@ -44,17 +50,36 @@ type CPU struct {
 	diskio
 }
 
+func (c *CPU) Read(addr uint16) uint8 {
+	return c.memory.Read(addr)
+}
+
+func (c *CPU) Write(addr uint16, data uint8) {
+	c.memory.Write(addr, data)
+}
+
 // New creates a new emulated Intel 8080 CPU
 func New(conin io.Reader, conout io.Writer, cpmImage []byte, disks []Disk) (c *CPU) {
 	c = &CPU{
-		Flags:     FlagBit1,
 		ClockTime: Speed2Mhz,
 	}
+	c.InitBasic(nil)
 
 	c.initBIOS(cpmImage, disks)
 	c.initConsole(conin, conout)
 
 	return
+}
+
+func (c *CPU) InitBasic(memory Memory) {
+	c.Flags = FlagBit1
+	c.memory = memory
+	c.Halted = false
+	c.PC = 0
+	c.SP = 0
+	for i := 0; i < 8; i++ {
+		c.Registers[i] = 0
+	}
 }
 
 const tickBudget = 10 * time.Millisecond
@@ -91,7 +116,7 @@ func (c *CPU) Run() (cycles uint64) {
 			if debug {
 				fmt.Printf("%8d %s\r\n", cycles, c.Debug())
 			}
-			op := c.Memory[c.PC]
+			op := c.Read(c.PC)
 			if op == 0x00 {
 				nops++
 			} else {
@@ -109,4 +134,13 @@ func (c *CPU) Run() (cycles uint64) {
 
 		timeUsed -= tickBudget
 	}
+}
+
+func (c *CPU) Step() uint64 {
+	if c.Halted {
+		return 0
+	}
+	op := c.Read(c.PC)
+	c.PC++
+	return ops[op](op, c)
 }

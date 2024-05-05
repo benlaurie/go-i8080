@@ -76,10 +76,10 @@ func (c *CPU) initDisks(disks []Disk) {
 		// 0x00, 0x00, // ALLOC
 	}
 
-	copy(c.Memory[DPH0:], dph)
-	copy(c.Memory[DPH1:], dph)
-	copy(c.Memory[DPH2:], dph)
-	copy(c.Memory[DPH3:], dph)
+	c.WriteBlock(DPH0, dph)
+	c.WriteBlock(DPH1, dph)
+	c.WriteBlock(DPH2, dph)
+	c.WriteBlock(DPH3, dph)
 
 	c.Write16(uint16(DPH0+len(dph)), Check0)
 	c.Write16(uint16(DPH0+len(dph)+2), Alloc0)
@@ -90,11 +90,11 @@ func (c *CPU) initDisks(disks []Disk) {
 	c.Write16(uint16(DPH3+len(dph)), Check3)
 	c.Write16(uint16(DPH3+len(dph)+2), Alloc3)
 
-	copy(c.Memory[SecTrans:], []byte{
+	c.WriteBlock(SecTrans, []byte{
 		1, 7, 13, 19, 25, 5, 11, 17, 23, 3, 9, 15, 21, 2, 8, 14, 20, 26, 6, 12, 18, 24, 4, 10, 16, 22,
 	})
 
-	copy(c.Memory[DPB:], []byte{
+	c.WriteBlock(DPB, []byte{
 		26, 0, // sectors per track
 		3,      // block shift factor ??
 		7,      // block mask ??
@@ -131,14 +131,16 @@ func (c *CPU) diskRead() uint8 {
 	offset := DMA_SIZE * int64(SECTORS_PER_TRACK*c.diskio.track+c.diskio.sector)
 
 	disk := c.diskio.disks[c.diskio.disk].Data
-	dma := c.Memory[c.diskio.dmaAddress:][:DMA_SIZE]
+	//dma := c.Memory[c.diskio.dmaAddress:][:DMA_SIZE]
 
 	_, err := disk.Seek(offset, io.SeekStart)
 	if err != nil {
 		panic(err)
 	}
 
-	n, err := disk.Read(dma)
+	var dma [DMA_SIZE]uint8
+	n, err := disk.Read(dma[:])
+	c.WriteBlock(c.diskio.dmaAddress, dma[:])
 	if err != nil {
 		panic(err)
 	}
@@ -155,7 +157,6 @@ func (c *CPU) diskWrite() uint8 {
 	}
 
 	disk := c.diskio.disks[c.diskio.disk].Data
-	dma := c.Memory[c.diskio.dmaAddress:][:DMA_SIZE]
 
 	offset := DMA_SIZE * int64(SECTORS_PER_TRACK*c.diskio.track+c.diskio.sector)
 
@@ -164,7 +165,9 @@ func (c *CPU) diskWrite() uint8 {
 		panic(err)
 	}
 
-	n, err := disk.Write(dma)
+	var dma [DMA_SIZE]uint8
+	c.ReadBlock(c.diskio.dmaAddress, dma[:])
+	n, err := disk.Write(dma[:])
 	if err != nil {
 		panic(err)
 	}
@@ -176,5 +179,5 @@ func (c *CPU) diskWrite() uint8 {
 }
 
 func (c *CPU) diskSectran(table uint16, entry uint16) uint16 {
-	return uint16(c.Memory[table+entry]) - 1
+	return uint16(c.Read(table+entry)) - 1
 }
